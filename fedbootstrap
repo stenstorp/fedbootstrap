@@ -1,0 +1,75 @@
+#!/bin/bash
+
+if [ -z $3 ]; then
+	echo "Usage: fedbootstrap [suite] [version] [directory]"
+	exit
+fi
+
+suite=$1
+version=$2
+directory=$3
+
+if [ "$suite" == "centos" ]; then
+
+	case $version in
+		8*)
+			release=8
+			conffile=centos.conf
+			;;
+		7*)
+			release=7
+			conffile=centos-old.conf
+			;;
+		6*)
+			release=6
+			conffile=centos-old.conf
+			;;
+		5*)
+			release=5.11
+			conffile=centos-vault.conf
+			;;
+		4*)
+			release=4.9
+			conffile=centos-vault.conf
+			;;
+		*)
+			echo "CentOS releases < 4 not supported"
+			exit
+			;;
+	esac
+
+	if [ "$conffile" == "centos-vault.conf" ]; then
+		sed -e 's/$fullreleasever/'"$release"'/g' centos-vault.conf > /tmp/dnf.conf
+	else
+		cp $conffile /tmp/dnf.conf
+	fi
+
+	comp="Base"
+
+elif [ "$suite" == "fedora" ]; then
+
+	if [ "$version" -lt 28 ]; then
+		conffile=fedora-old.conf
+	elif [ "$version" -lt 29 ]; then
+		conffile=fedora-vault.conf
+	else
+		conffile=fedora.conf
+	fi
+
+	if [ "$version" -gt 17 ]; then
+		comp="Minimal Install"
+	else
+		comp="Base"
+	fi
+
+	cp $conffile /tmp/dnf.conf
+	release="$version"
+
+else
+	echo "Only fedora and centos are supported"
+	exit
+fi
+
+#dnf -c /tmp/dnf.conf --installroot="$directory" --releasever="$release" groupinstall "$comp"
+#dnf -c /tmp/dnf.conf --installroot="$directory" --releasever="$release" groupinstall "Minimal Install"
+dnf -c /tmp/dnf.conf --installroot="$directory" --releasever="$release" grouplist --hidden
