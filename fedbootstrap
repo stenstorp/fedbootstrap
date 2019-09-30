@@ -33,7 +33,7 @@ if [ "$suite" == "centos" ]; then
 			conffile=centos-vault.conf
 			;;
 		*)
-			echo "CentOS releases < 4 not supported"
+			echo "Only CentOS releases 4-8 supported"
 			exit
 			;;
 	esac
@@ -44,7 +44,7 @@ if [ "$suite" == "centos" ]; then
 		cp $conffile /tmp/dnf.conf
 	fi
 
-	comp="Base"
+	comp="Minimal Install"
 
 elif [ "$suite" == "fedora" ]; then
 
@@ -70,6 +70,4 @@ else
 	exit
 fi
 
-#dnf -c /tmp/dnf.conf --installroot="$directory" --releasever="$release" groupinstall "$comp"
-#dnf -c /tmp/dnf.conf --installroot="$directory" --releasever="$release" groupinstall "Minimal Install"
-dnf -c /tmp/dnf.conf --installroot="$directory" --releasever="$release" grouplist --hidden
+dnf -c /tmp/dnf.conf --installroot="$directory" --releasever="$release" groupinstall "$comp"
