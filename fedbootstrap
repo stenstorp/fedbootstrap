@@ -9,27 +9,43 @@ suite=$1
 version=$2
 directory=$3
 
+# directory must be an absolute path
+if [[ $directory != /* ]]; then
+	directory=$(pwd)/$directory
+fi
+
+TMP_DNF=/tmp/fedbootstrap-dnf.conf
+DATA_DIR=/etc/fedbootstrap
+
 if [ "$suite" == "centos" ]; then
 
+	if [ "$version" -gt 6 ]; then
+		comp="Minimal Install"
+	else
+		comp="Base"
+	fi
+
 	case $version in
-		8*)
+		8)
 			release=8
 			conffile=centos.conf
 			;;
-		7*)
+		7)
 			release=7
 			conffile=centos-old.conf
 			;;
-		6*)
+		6)
 			release=6
 			conffile=centos-old.conf
 			;;
-		5*)
-			release=5.11
+		5)
+			release=5
+			fullrelease=5.11
 			conffile=centos-vault.conf
 			;;
-		4*)
-			release=4.9
+		4)
+			release=4
+			fullrelease=4.9
 			conffile=centos-vault.conf
 			;;
 		*)
@@ -38,13 +54,12 @@ if [ "$suite" == "centos" ]; then
 			;;
 	esac
 
+	# Full release version needs to be specified on CentOS Vault
 	if [ "$conffile" == "centos-vault.conf" ]; then
-		sed -e 's/$fullreleasever/'"$release"'/g' centos-vault.conf > /tmp/dnf.conf
+		sed -e 's/$fullreleasever/'"$fullrelease"'/g' $DATA_DIR/centos-vault.conf > $TMP_DNF
 	else
-		cp $conffile /tmp/dnf.conf
+		cp $DATA_DIR/$conffile $TMP_DNF
 	fi
-
-	comp="Minimal Install"
 
 elif [ "$suite" == "fedora" ]; then
 
@@ -56,13 +71,18 @@ elif [ "$suite" == "fedora" ]; then
 		conffile=fedora.conf
 	fi
 
+	if [ "$version" -lt 7 ]; then
+		echo "Only Fedora versions higher than 7 are supported"
+		exit
+	fi
+
 	if [ "$version" -gt 17 ]; then
 		comp="Minimal Install"
 	else
 		comp="Base"
 	fi
 
-	cp $conffile /tmp/dnf.conf
+	cp $DATA_DIR/$conffile $TMP_DNF
 	release="$version"
 
 else
@@ -70,4 +90,6 @@ else
 	exit
 fi
 
-dnf -c /tmp/dnf.conf --installroot="$directory" --releasever="$release" groupinstall "$comp"
+dnf -y -c $TMP_DNF --installroot="$directory" --releasever="$release" groupinstall "$comp" && \
+rm $TMP_DNF && \
+rm -rf $directory/var/lib/rpm
