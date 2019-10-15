@@ -1,13 +1,19 @@
 #!/bin/bash
 
 if [ -z $3 ]; then
-	echo "Usage: fedbootstrap [suite] [version] [directory]"
+	echo "Usage: fedbootstrap [suite] [version] [directory] [arch (optional)]"
 	exit
 fi
 
 suite=$1
 version=$2
 directory=$3
+
+if [ -z $4 ]; then
+	arch=$(uname -m)
+else
+	arch=$4
+fi
 
 # directory must be an absolute path
 if [[ $directory != /* ]]; then
@@ -90,6 +96,6 @@ else
 	exit
 fi
 
-dnf -y -c $TMP_DNF --installroot="$directory" --releasever="$release" groupinstall "$comp" && \
+dnf -y -c $TMP_DNF --installroot="$directory" --releasever="$release" --forcearch=$arch groupinstall "$comp" && \
 rm $TMP_DNF && \
 rm -rf $directory/var/lib/rpm
