@@ -1,12 +1,12 @@
 #!/bin/bash
 
 if [ -z $3 ]; then
-	echo "Usage: fedbootstrap [suite] [version] [directory] [arch (optional)]"
+	echo "Usage: fedbootstrap [suite] [release] [directory] [arch (optional)]"
 	exit
 fi
 
 suite=$1
-version=$2
+release=$2
 directory=$3
 
 if [ -z $4 ]; then
@@ -25,36 +25,39 @@ DATA_DIR=/etc/fedbootstrap
 
 if [ "$suite" == "centos" ]; then
 
-	case $version in
+	case $release in
 		8)
-			release=8
 			conffile=centos.conf
 			;;
 		7)
-			release=7
 			conffile=centos-old.conf
 			;;
 		6)
-			release=6
 			conffile=centos-old.conf
 			;;
 		5)
-			release=5
 			fullrelease=5.11
 			conffile=centos-vault.conf
 			;;
 		4)
-			release=4
 			fullrelease=4.9
 			conffile=centos-vault.conf
 			;;
+		3)
+			fullrelease=3.9
+			conffile=centos-vault.conf
+			;;
+		2)
+			echo "CentOS 2 is not supported"
+			exit
+			;;
 		*)
-			echo "Only CentOS releases 4-8 supported"
+			echo "Only CentOS releases 3-8 supported"
 			exit
 			;;
 	esac
 
-	if [ "$version" -ge 8 ]; then
+	if [ "$release" -ge 8 ]; then
 		packagemanager=dnf
 	else
 		packagemanager=yum
@@ -69,22 +72,22 @@ if [ "$suite" == "centos" ]; then
 
 elif [ "$suite" == "fedora" ]; then
 
-	if [ "$version" -eq 1 ]; then
+	if [ "$release" -eq 1 ]; then
 		echo "Fedora Core 1 is not supported"
 		exit
 	fi
 
-	if [ "$version" -ge 29 ]; then
+	if [ "$release" -ge 29 ]; then
 		conffile=fedora.conf
-	elif [ "$version" -ge 28 ]; then
+	elif [ "$release" -ge 28 ]; then
 		conffile=fedora-vault.conf
-	elif [ "$version" -ge 7 ]; then
+	elif [ "$release" -ge 7 ]; then
 		conffile=fedora-vault-old.conf
 	else
 		conffile=fedora-core.conf
 	fi
 
-	if [ "$version" -ge 22 ]; then
+	if [ "$release" -ge 22 ]; then
 		packagemanager=dnf
 	else
 		packagemanager=yum
@@ -97,15 +100,17 @@ else
 	exit
 fi
 
-dnf -y -c $TMP_DNF --skip-broken --installroot="$directory" --releasever="$version" --forcearch=$arch install @Core $packagemanager && \
+dnf -y -c $TMP_DNF --skip-broken --installroot="$directory" --releasever="$release" --forcearch=$arch install @Core $packagemanager && \
 rm $TMP_DNF && \
 rm -rf $directory/var/lib/rpm
 
-if [ "$version" -le 5 ] && [ "$suite" == "centos" ]; then
+if [ "$release" -le 5 ] && [ "$suite" == "centos" ]; then
+	echo ""
 	echo "NOTICE: This version of CentOS is deprecated, repositories are now hosted on https://archive.kernel.org/centos-vault/"
-	echo "        Package management will not work by default."
-elif [ "$version" -le 28 ] && [ "$suite" == "fedora" ]; then
+	echo "        Package management may not work by default."
+elif [ "$release" -le 28 ] && [ "$suite" == "fedora" ]; then
+	echo ""
 	echo "NOTICE: This version of Fedora is deprecated, repositories are now hosted on https://archive.kernel.org/fedora-archive/"
-	echo "        Package management will not work by default."
+	echo "        Package management may not work by default."
 fi
 
