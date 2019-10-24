@@ -100,3 +100,12 @@ fi
 dnf -y -c $TMP_DNF --skip-broken --installroot="$directory" --releasever="$version" --forcearch=$arch install @Core $packagemanager && \
 rm $TMP_DNF && \
 rm -rf $directory/var/lib/rpm
+
+if [ "$version" -le 5 ] && [ "$suite" == "centos" ]; then
+	echo "NOTICE: This version of CentOS is deprecated, repositories are now hosted on https://archive.kernel.org/centos-vault/"
+	echo "        Package management will not work by default."
+elif [ "$version" -le 28 ] && [ "$suite" == "fedora" ]; then
+	echo "NOTICE: This version of Fedora is deprecated, repositories are now hosted on https://archive.kernel.org/fedora-archive/"
+	echo "        Package management will not work by default."
+fi
+
