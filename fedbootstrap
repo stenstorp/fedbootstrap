@@ -25,12 +25,6 @@ DATA_DIR=/etc/fedbootstrap
 
 if [ "$suite" == "centos" ]; then
 
-	if [ "$version" -gt 6 ]; then
-		comp="Minimal Install"
-	else
-		comp="Base"
-	fi
-
 	case $version in
 		8)
 			release=8
@@ -60,6 +54,12 @@ if [ "$suite" == "centos" ]; then
 			;;
 	esac
 
+	if [ "$version" -ge 8 ]; then
+		packagemanager=dnf
+	else
+		packagemanager=yum
+	fi
+
 	# Full release version needs to be specified on CentOS Vault
 	if [ "$conffile" == "centos-vault.conf" ]; then
 		sed -e 's/$fullreleasever/'"$fullrelease"'/g' $DATA_DIR/centos-vault.conf > $TMP_DNF
@@ -69,33 +69,34 @@ if [ "$suite" == "centos" ]; then
 
 elif [ "$suite" == "fedora" ]; then
 
-	if [ "$version" -lt 28 ]; then
-		conffile=fedora-old.conf
-	elif [ "$version" -lt 29 ]; then
-		conffile=fedora-vault.conf
-	else
-		conffile=fedora.conf
-	fi
-
-	if [ "$version" -lt 7 ]; then
-		echo "Only Fedora versions higher than 7 are supported"
+	if [ "$version" -eq 1 ]; then
+		echo "Fedora Core 1 is not supported"
 		exit
 	fi
 
-	if [ "$version" -gt 17 ]; then
-		comp="Minimal Install"
+	if [ "$version" -ge 29 ]; then
+		conffile=fedora.conf
+	elif [ "$version" -ge 28 ]; then
+		conffile=fedora-vault.conf
+	elif [ "$version" -ge 7 ]; then
+		conffile=fedora-vault-old.conf
 	else
-		comp="Base"
+		conffile=fedora-core.conf
+	fi
+
+	if [ "$version" -ge 22 ]; then
+		packagemanager=dnf
+	else
+		packagemanager=yum
 	fi
 
 	cp $DATA_DIR/$conffile $TMP_DNF
-	release="$version"
 
 else
 	echo "Only fedora and centos are supported"
 	exit
 fi
 
-dnf -y -c $TMP_DNF --installroot="$directory" --releasever="$release" --forcearch=$arch groupinstall "$comp" && \
+dnf -y -c $TMP_DNF --skip-broken --installroot="$directory" --releasever="$version" --forcearch=$arch install @Core $packagemanager && \
 rm $TMP_DNF && \
 rm -rf $directory/var/lib/rpm
