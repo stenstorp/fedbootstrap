@@ -1,8 +1,22 @@
 #!/bin/bash
 
-if [ -z $3 ]; then
-	echo "Usage: fedbootstrap [suite] [release] [directory] [arch (optional)]"
+if [ $(command -v dnf) ]; then
+	PM=dnf
+elif [ $(command -v yum) ]; then
+	PM=yum
+else
+	echo "No package manager found!"
 	exit
+fi
+
+if [ -z $3 ]; then
+	if [ "$PM" == "dnf" ]; then
+		echo "Usage: fedbootstrap [suite] [release] [directory] [arch (optional)]"
+		exit
+	else
+		echo "Usage: fedbootstrap [suite] [release] [directory]"
+		exit
+	fi
 fi
 
 suite=$1
@@ -100,9 +114,15 @@ else
 	exit
 fi
 
-dnf -y -c $TMP_DNF --skip-broken --installroot="$directory" --releasever="$release" --forcearch=$arch install @Core $packagemanager && \
-rm $TMP_DNF && \
-rm -rf $directory/var/lib/rpm
+if [ "$PM" == "dnf" ]; then
+	dnf -y -c $TMP_DNF --skip-broken --installroot="$directory" --releasever="$release" --forcearch=$arch install @Core $packagemanager && \
+	rm $TMP_DNF && \
+	rm -rf $directory/var/lib/rpm
+else
+	yum -y -c $TMP_DNF --skip-broken --installroot="$directory" --releasever="$release" install @Core $packagemanager && \
+	rm $TMP_DNF && \
+	rm -rf $directory/var/lib/rpm
+fi
 
 if [ "$release" -le 5 ] && [ "$suite" == "centos" ]; then
 	echo ""
